@@ -17,18 +17,34 @@ namespace ReportGen
         public void read(String filename)
         {
             object misValue = System.Reflection.Missing.Value;
+            DateTime _reportDate;
+
+            _reportDate = getDateFromFileName(filename);
 
             xlApp = new Excel.Application();
             xlWorkBook = xlApp.Workbooks.Open(filename, 0, true, 5, "", "", true, 
                 Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
-            
+
+            readProjectReport();
+
+            xlWorkBook.Close(true, misValue, misValue);
+
+            xlApp.Quit();
+            releaseObj(xlWorkSheet);
+            releaseObj(xlWorkBook);
+            releaseObj(xlApp);
+        }
+
+        private void readProjectReport()
+        {
+            String _reporterName;
+            String _project = null, _record = null, _issue = null, _plan = null;
             xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
             Excel.Range range = xlWorkSheet.UsedRange;
-            
-            Debug.Print(range.Rows.Count.ToString());
-            Debug.Print(range.Columns.Count.ToString());
 
-            String _project = null, _record = null, _issue = null, _plan = null;
+
+            _reporterName = xlWorkSheet.get_Range("I6").Value2;
+
             for (int i = 1; i <= range.Rows.Count; i++)
             {
                 String cell = "B" + i;
@@ -43,15 +59,15 @@ namespace ReportGen
                 if (strTemp == "프로젝트")
                 {
                     _project = range[r.Row, r.Column + 1].Value2;
-                } 
+                }
                 else if (strTemp == "추진실적")
                 {
                     _record = range[r.Row, r.Column + 1].Value2;
-                } 
+                }
                 else if (strTemp == "추진계획")
                 {
                     _plan = range[r.Row, r.Column + 1].Value2;
-                } 
+                }
                 else if (strTemp == "주요이슈사항")
                 {
                     _issue = range[r.Row, r.Column + 1].Value2;
@@ -60,6 +76,7 @@ namespace ReportGen
                     item.record = _record;
                     item.plan = _plan;
                     item.issue = _issue;
+                    
                     dataList.Add(item);
                     _project = _record = _plan = _issue = null;
                 }
@@ -75,12 +92,30 @@ namespace ReportGen
                 Debug.Print("issue:");
                 Debug.Print(d.issue);
             }
-            xlWorkBook.Close(true, misValue, misValue);
+        }
 
-            xlApp.Quit();
-            releaseObj(xlWorkSheet);
-            releaseObj(xlWorkBook);
-            releaseObj(xlApp);
+        private DateTime getDateFromFileName(string filename)
+        {
+            DateTime res;
+            res = DateTime.Today;
+            String name;
+            name = System.IO.Path.GetFileName(filename);
+            char[] delimit = new char[] { '_', '.' };
+            //string s10 = "TCS-H002_SYS1G2T_주간 업무 보고서(박준형)_110114.xls";
+            String[] parsedName = name.Split(delimit);
+            Debug.Print(parsedName.Length.ToString());
+
+            Debug.Print(parsedName[3]);
+            //res = DateTime.Parse(parsedName[3]);
+            res = new DateTime(
+                2000 + Int32.Parse(parsedName[3].Substring(0, 2)),
+                Int32.Parse(parsedName[3].Substring(2, 2)),
+                Int32.Parse(parsedName[3].Substring(4, 2))
+            );
+            
+            
+
+            return res;
         }
         public void close()
         {

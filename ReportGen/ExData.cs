@@ -28,5 +28,11 @@ namespace ReportGen
             get;
             set;
         }
+        public String reporterName
+        { get; set; }
+        public DateTime reportDate
+        { get; set; }
+
+    
     }
 }
