@@ -12,12 +12,13 @@ namespace ReportGen
         Excel.Application xlApp;
         Excel.Workbook xlWorkBook;
         Excel.Worksheet xlWorkSheet;
-        List<ExData> dataList = new List<ExData>();
+        List<ExData> projectReportList = new List<ExData>();
 
         public void read(String filename)
         {
             object misValue = System.Reflection.Missing.Value;
             DateTime _reportDate;
+            String _reporterName;
 
             _reportDate = getDateFromFileName(filename);
 
@@ -25,7 +26,7 @@ namespace ReportGen
             xlWorkBook = xlApp.Workbooks.Open(filename, 0, true, 5, "", "", true, 
                 Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
 
-            readProjectReport();
+            _reporterName = readProjectReport(_reportDate);
 
             xlWorkBook.Close(true, misValue, misValue);
 
@@ -35,14 +36,13 @@ namespace ReportGen
             releaseObj(xlApp);
         }
 
-        private void readProjectReport()
+        private String readProjectReport(DateTime reportDate)
         {
             String _reporterName;
             String _project = null, _record = null, _issue = null, _plan = null;
             xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
             Excel.Range range = xlWorkSheet.UsedRange;
-
-
+            
             _reporterName = xlWorkSheet.get_Range("I6").Value2;
 
             for (int i = 1; i <= range.Rows.Count; i++)
@@ -76,47 +76,44 @@ namespace ReportGen
                     item.record = _record;
                     item.plan = _plan;
                     item.issue = _issue;
-                    
-                    dataList.Add(item);
+                    item.reporterName = _reporterName;
+                    item.reportDate = reportDate;
+                    projectReportList.Add(item);
                     _project = _record = _plan = _issue = null;
                 }
             }
-            foreach (ExData d in dataList)
+            foreach (ExData d in projectReportList)
             {
                 Debug.IndentSize = 4;
                 Debug.Print("Project : " + d.project);
+                Debug.Indent();
                 Debug.Print("record : ");
                 Debug.Print(d.record);
                 Debug.Print("Plan:");
                 Debug.Print(d.plan);
                 Debug.Print("issue:");
                 Debug.Print(d.issue);
+                Debug.Unindent();
+             
             }
+            return _reporterName;
         }
 
-        private DateTime getDateFromFileName(string filename)
+
+        public DateTime getDateFromFileName(string filename)
         {
-            DateTime res;
-            res = DateTime.Today;
+            DateTime day;
             String name;
+            day = DateTime.Now;
             name = System.IO.Path.GetFileName(filename);
             char[] delimit = new char[] { '_', '.' };
             //string s10 = "TCS-H002_SYS1G2T_주간 업무 보고서(박준형)_110114.xls";
             String[] parsedName = name.Split(delimit);
-            Debug.Print(parsedName.Length.ToString());
-
+            day = DateTime.ParseExact(parsedName[3], "yyMMdd", null);
             Debug.Print(parsedName[3]);
-            //res = DateTime.Parse(parsedName[3]);
-            res = new DateTime(
-                2000 + Int32.Parse(parsedName[3].Substring(0, 2)),
-                Int32.Parse(parsedName[3].Substring(2, 2)),
-                Int32.Parse(parsedName[3].Substring(4, 2))
-            );
-            
-            
-
-            return res;
+            return day;
         }
+
         public void close()
         {
         }
