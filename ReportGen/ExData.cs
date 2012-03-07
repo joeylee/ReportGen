@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ReportGen
 {
-    class ExData
+    class ProjectReport
     {
         //private string _project, _record, _plan, _issue;
         public String project
@@ -28,11 +28,10 @@ namespace ReportGen
             get;
             set;
         }
-        public String reporterName
+        public String reporter
         { get; set; }
-        public DateTime reportDate
+        public DateTime date
         { get; set; }
-
-    
     }
+
 }

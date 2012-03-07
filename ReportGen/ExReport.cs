@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Diagnostics;
+using System.Data;
 
 namespace ReportGen
 {
@@ -12,8 +13,12 @@ namespace ReportGen
         Excel.Application xlApp;
         Excel.Workbook xlWorkBook;
         Excel.Worksheet xlWorkSheet;
-        List<ExData> projectReportList = new List<ExData>();
+        List<ProjectReport> projectReportList = new List<ProjectReport>();
+        DataTable a;
+        private void CreateTables()
+        {
 
+        }
         public void read(String filename)
         {
             object misValue = System.Reflection.Missing.Value;
@@ -27,13 +32,57 @@ namespace ReportGen
                 Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
 
             _reporterName = readProjectReport(_reportDate);
-
+            readNonProjectReport(_reporterName, _reportDate);
             xlWorkBook.Close(true, misValue, misValue);
 
             xlApp.Quit();
             releaseObj(xlWorkSheet);
             releaseObj(xlWorkBook);
             releaseObj(xlApp);
+        }
+
+        private void readNonProjectReport(string _reporterName, DateTime _reportDate)
+        {
+            Excel.Worksheet ws = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(2);
+            Excel.Range range = ws.UsedRange;
+            Debug.Print(range.Row.ToString());
+            Object[,] data;
+            data = (System.Object[,])range.get_Value(Type.Missing);
+            long iRows;
+            long iCols;
+            iRows = data.GetUpperBound(0);
+            iCols = data.GetUpperBound(1);
+            Debug.Print(data[6, 2].ToString());
+            List<NonProjectReport> reports = new List<NonProjectReport>();
+            
+            for ( int i = 6 ; i < iRows; i++)
+            {
+                NonProjectReport report = new NonProjectReport();
+                if (data[i, 1] != null)
+                {
+                    if (data[i, NonProjectReport.cCategory] != null)
+                    {
+                        report.category = data[i, NonProjectReport.cCategory] == null ? "" :data[i, NonProjectReport.cCategory].ToString().Trim();
+                        report.project = data[i, NonProjectReport.cProject] == null ? "" : data[i, NonProjectReport.cProject].ToString().Trim();
+                        report.customer = data[i, NonProjectReport.cCustomer] == null ? "" : data[i, NonProjectReport.cCustomer].ToString().Trim();
+                        report.report = data[i, NonProjectReport.cReport] == null ? "" : data[i, NonProjectReport.cReport].ToString().Trim();
+                        report.personInCharge = data[i, NonProjectReport.cPersonInCharge] == null ? "" : data[i, NonProjectReport.cPersonInCharge].ToString().Trim();
+                        report.team = data[i, NonProjectReport.cTeam] == null ? "" : data[i, NonProjectReport.cTeam].ToString().Trim();
+                        report.issue = data[i, NonProjectReport.cIssue] == null ? "" : data[i, NonProjectReport.cIssue].ToString().Trim();
+                        
+                    }
+                }
+
+
+                Debug.Print(data[i, 1].ToString());
+                /*
+                if (r.Value2 != null)
+                {
+                    strTemp = r.Value2.ToString();
+                    Debug.Print(strTemp);
+                }
+                */
+            }
         }
 
         private String readProjectReport(DateTime reportDate)
@@ -49,7 +98,7 @@ namespace ReportGen
             {
                 String cell = "B" + i;
                 Excel.Range r;
-                ExData item;
+                ProjectReport item;
                 r = xlWorkSheet.get_Range(cell, cell);
                 String strTemp = r.Value2;
                 if (strTemp != null)
@@ -71,18 +120,18 @@ namespace ReportGen
                 else if (strTemp == "주요이슈사항")
                 {
                     _issue = range[r.Row, r.Column + 1].Value2;
-                    item = new ExData();
+                    item = new ProjectReport();
                     item.project = _project;
                     item.record = _record;
                     item.plan = _plan;
                     item.issue = _issue;
-                    item.reporterName = _reporterName;
-                    item.reportDate = reportDate;
+                    item.reporter = _reporterName;
+                    item.date = reportDate;
                     projectReportList.Add(item);
                     _project = _record = _plan = _issue = null;
                 }
             }
-            foreach (ExData d in projectReportList)
+            foreach (ProjectReport d in projectReportList)
             {
                 Debug.IndentSize = 4;
                 Debug.Print("Project : " + d.project);
