@@ -14,17 +14,188 @@ namespace ReportGen
         Excel.Workbook xlWorkBook;
         Excel.Worksheet xlWorkSheet;
         List<ProjectReport> projectReportList = new List<ProjectReport>();
-        DataTable a;
+        private System.Data.DataSet dataSet;
+
         private void CreateTables()
         {
+            // Instantiate the DataSet variable.
+            dataSet = new DataSet();
+
+            MakeProjectTable();
+            MakeNonProjectTable();
+            MakeRelations();
 
         }
+
+        private void MakeRelations()
+        {
+            DataRelation dateRelation;
+            dateRelation = dataSet.Relations.Add("DateMatch",
+                dataSet.Tables["ProjectTable"].Columns["date"],
+                dataSet.Tables["NonProjectTable"].Columns["date"]);
+        }
+
+        private DataColumn MakeStringRecord(String name)
+        {
+            DataColumn column;
+            // Create second column.
+            column = new DataColumn();
+            column.DataType = System.Type.GetType("System.String");
+            column.ColumnName = name;
+            column.AutoIncrement = false;
+            column.Caption = name;
+            column.ReadOnly = false;
+            column.Unique = false;
+            return column;
+        }
+
+        private void MakeProjectTable()
+        {
+            // Create a new DataTable.
+            System.Data.DataTable table = new DataTable("ProjectTable");
+            // Declare variables for DataColumn and DataRow objects.
+            DataColumn column;
+
+            // Create new DataColumn, set DataType, 
+            // ColumnName and add to DataTable.    
+            column = new DataColumn();
+            column.DataType = System.Type.GetType("System.Int32");
+            column.ColumnName = "id";
+            column.ReadOnly = true;
+            column.Unique = false;
+            // Add the Column to the DataColumnCollection.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("project");
+            //column = new DataColumn();
+            //column.DataType = System.Type.GetType("System.String");
+            //column.ColumnName = "project";
+            //column.AutoIncrement = false;
+            //column.Caption = "project";
+            //column.ReadOnly = false;
+            //column.Unique = false;
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("record");
+
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("plan");
+
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("issue");
+
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("reporter");
+
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = new DataColumn();
+            column.DataType = System.Type.GetType("System.DateTime");
+            column.ColumnName = "date";
+            column.AutoIncrement = false;
+            column.Caption = "date";
+            column.ReadOnly = false;
+            column.Unique = false;
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Make the ID column the primary key column.
+            //DataColumn[] PrimaryKeyColumns = new DataColumn[1];
+            //PrimaryKeyColumns[0] = table.Columns["id"];
+            //table.PrimaryKey = PrimaryKeyColumns;
+
+            // Add the new DataTable to the DataSet.
+            dataSet.Tables.Add(table);
+
+            // Create three new DataRow objects and add 
+            // them to the DataTable
+            /*
+            for (int i = 0; i <= 2; i++)
+            {
+                row = table.NewRow();
+                row["id"] = i;
+                row["ParentItem"] = "ParentItem " + i;
+                table.Rows.Add(row);
+            }
+            */
+        }
+        private void MakeNonProjectTable()
+        {
+            // Create a new DataTable.
+            System.Data.DataTable table = new DataTable("NonProjectTable");
+            // Declare variables for DataColumn and DataRow objects.
+            DataColumn column;
+
+            // Create new DataColumn, set DataType, 
+            // ColumnName and add to DataTable.    
+            column = new DataColumn();
+            column.DataType = System.Type.GetType("System.Int32");
+            column.ColumnName = "id";
+            column.ReadOnly = true;
+            column.Unique = true;
+            // Add the Column to the DataColumnCollection.
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = MakeStringRecord("category");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("project");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("customer");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("report");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("personInCharge");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("team");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("issue");
+            table.Columns.Add(column);
+
+            column = MakeStringRecord("reporter");
+            table.Columns.Add(column);
+
+            // Create second column.
+            column = new DataColumn();
+            column.DataType = System.Type.GetType("System.DateTime");
+            column.ColumnName = "date";
+            column.AutoIncrement = false;
+            column.Caption = "date";
+            column.ReadOnly = false;
+            column.Unique = false;
+            // Add the column to the table.
+            table.Columns.Add(column);
+
+            // Add the new DataTable to the DataSet.
+            dataSet.Tables.Add(table);
+        }
+
         public void read(String filename)
         {
             object misValue = System.Reflection.Missing.Value;
             DateTime _reportDate;
             String _reporterName;
-
+            CreateTables();
             _reportDate = getDateFromFileName(filename);
 
             xlApp = new Excel.Application();
@@ -34,11 +205,20 @@ namespace ReportGen
             _reporterName = readProjectReport(_reportDate);
             readNonProjectReport(_reporterName, _reportDate);
             xlWorkBook.Close(true, misValue, misValue);
-
+            displayDataSet();
             xlApp.Quit();
             releaseObj(xlWorkSheet);
             releaseObj(xlWorkBook);
             releaseObj(xlApp);
+        }
+
+        private void displayDataSet()
+        {
+            DataTable projectTable = dataSet.Tables["ProjectTable"];
+            foreach (DataRow row in projectTable.Rows)
+            {
+                
+            }
         }
 
         private void readNonProjectReport(string _reporterName, DateTime _reportDate)
@@ -69,7 +249,21 @@ namespace ReportGen
                         report.personInCharge = data[i, NonProjectReport.cPersonInCharge] == null ? "" : data[i, NonProjectReport.cPersonInCharge].ToString().Trim();
                         report.team = data[i, NonProjectReport.cTeam] == null ? "" : data[i, NonProjectReport.cTeam].ToString().Trim();
                         report.issue = data[i, NonProjectReport.cIssue] == null ? "" : data[i, NonProjectReport.cIssue].ToString().Trim();
-                        
+
+                        System.Data.DataTable nonProjectTable;
+                        nonProjectTable = dataSet.Tables["NonProjectTable"];
+                        DataRow row;
+                        row = nonProjectTable.NewRow();
+                        row["category"] = data[i, NonProjectReport.cCategory] == null ? "" : data[i, NonProjectReport.cCategory].ToString().Trim();
+                        row["project"] = data[i, NonProjectReport.cProject] == null ? "" : data[i, NonProjectReport.cProject].ToString().Trim();
+                        row["customer"] = data[i, NonProjectReport.cCustomer] == null ? "" : data[i, NonProjectReport.cCustomer].ToString().Trim();
+                        row["report"] = data[i, NonProjectReport.cReport] == null ? "" : data[i, NonProjectReport.cReport].ToString().Trim();
+                        row["personInCharge"] = data[i, NonProjectReport.cPersonInCharge] == null ? "" : data[i, NonProjectReport.cPersonInCharge].ToString().Trim();
+                        row["team"] = data[i, NonProjectReport.cTeam] == null ? "" : data[i, NonProjectReport.cTeam].ToString().Trim();
+                        row["issue"] = data[i, NonProjectReport.cIssue] == null ? "" : data[i, NonProjectReport.cIssue].ToString().Trim();
+                        row["reporter"] = _reporterName;
+                        row["date"] = _reportDate;
+                        nonProjectTable.Rows.Add(row);                    
                     }
                 }
 
@@ -128,6 +322,21 @@ namespace ReportGen
                     item.reporter = _reporterName;
                     item.date = reportDate;
                     projectReportList.Add(item);
+
+                    System.Data.DataTable ProjectTable;
+                    ProjectTable = dataSet.Tables["ProjectTable"];
+                    DataRow row;
+                    row = ProjectTable.NewRow();
+
+                    row["project"] = _project;
+                    row["record"] = _record;
+                    row["plan"] = _plan;
+                    row["issue"] = _issue;
+                    row["reporter"] = _reporterName;
+                    row["date"] = reportDate;
+                    row["id"] = 1;
+                    ProjectTable.Rows.Add(row);
+
                     _project = _record = _plan = _issue = null;
                 }
             }
